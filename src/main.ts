@@ -58,3 +58,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 `
 
 setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+
+// Registro del Service Worker — Sesión 28.
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("/sw.js")
+    .then((reg) => console.log("SW registrado:", reg.scope))
+    .catch((err) => console.error("Error al registrar SW:", err));
+}
