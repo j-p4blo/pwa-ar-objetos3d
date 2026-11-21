@@ -1,0 +1,40 @@
+Atlas 3D de Arquitectura de Software — checkpoint al cierre de la Sesión 34
+Electiva - PWA · UPTC (Sub-bloque B)
+
+Qué es esto
+-----------
+El Atlas 3D con el Service Worker generado por Workbox (Sesión 34,
+espejo de la Sesión 23). El sw.js escrito a mano de las Sesiones 28-32
+desapareció: ahora lo genera vite-plugin-pwa durante "npm run build", con
+la lista de precaché calculada a partir de dist/ (nombres con hash
+incluidos). Esto resuelve de verdad la limitación de offline abierta
+desde la Sesión 29: el build SÍ funciona sin conexión.
+
+IMPORTANTE: el Service Worker solo existe en el BUILD, no en "npm run dev".
+Para probar el offline real:
+
+  npm install
+  npm run build
+  npm run preview        (abre la URL que imprime, p. ej. localhost:4173)
+
+Carga la página una vez, DevTools → Network → "Offline", recarga: la app
+sigue cargando completa. Con "npm run dev" el Service Worker no se genera
+(el servidor de desarrollo sirve módulos al vuelo, no hay nada que
+precachear) — es normal.
+
+La capa de progreso con IndexedDB y la nota cifrada (Sesión 33) siguen
+igual. El catálogo real de modelos 3D todavía no existe: la demo usa tres
+IDs de prueba ("modelo-demo-1/2/3").
+
+Estructura
+----------
+  index.html               documento HTML raíz
+  vite.config.ts           NUEVO (Sesión 34): VitePWA + estrategias de runtime
+  public/manifest.json     el manifest de la Sesión 27
+  public/iconos/           icon-192.png, icon-512.png, icon-512-maskable.png
+  src/main.ts              punto de entrada; registra el SW con registerSW()
+  src/db.ts, src/crypto.ts IndexedDB y cifrado (Sesión 33)
+  src/style.css            estilos
+  src/vite-env.d.ts        tipos de Vite + de vite-plugin-pwa/client
+
+UPTC · Facultad de Ingeniería · Electiva - PWA
