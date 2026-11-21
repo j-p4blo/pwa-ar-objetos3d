@@ -1,7 +1,9 @@
-// xr.ts — realidad aumentada con WebXR (Sesión 38).
-// Esta sesión solo ARRANCA la sesión AR: detecta si se puede, la pide dentro
-// de un clic y la cierra bien. Colocar el objeto sobre una superficie real
-// (hit-test) y anclarlo es el tema de la Sesión 39.
+// xr.ts — realidad aumentada con WebXR (Sesiones 38 y 39).
+// Sesión 38: detectar si se puede, pedir la sesión dentro de un clic y cerrarla bien.
+// Sesión 39: además se piden «hit-test» (encontrar una superficie real; primero como
+// función requerida y, si el dispositivo no la ofrece, como opcional) y «anchors»
+// (anclar el objeto a ella), y se averigua cuáles concedió realmente el navegador
+// para tener un plan B en cada caso.
 
 /** Resultado de preguntar «¿puedo usar AR aquí?». */
 export type SoporteAR = "disponible" | "contexto-inseguro" | "sin-webxr" | "sin-ar";
@@ -47,14 +49,48 @@ export function mensajeSoporteAR(estado: SoporteAR): string {
 /**
  * Pide la sesión AR. DEBE llamarse desde el manejador de un clic: sin gesto del
  * usuario, el navegador la rechaza con SecurityError.
+ *
+ * Primer intento: `hit-test` como función REQUERIDA. Con ella opcional, Chrome en Android
+ * concedía la función y creaba la fuente, pero nunca entregaba una superficie; como requerida,
+ * el anillo sale. Si el dispositivo no la ofrece (NotSupportedError), se reintenta con todo
+ * opcional: la sesión se abre igual y la app usa su plan B.
  */
-export function pedirSesionAR(overlay: HTMLElement | null): Promise<XRSession> {
-  const opciones: XRSessionInit & { domOverlay?: { root: Element } } = {
-    requiredFeatures: ["local"], // el origen (0,0,0) es donde está el usuario al empezar
-    optionalFeatures: ["dom-overlay"], // si existe, el botón «Salir» se dibuja sobre la cámara
+export async function pedirSesionAR(overlay: HTMLElement | null): Promise<XRSession> {
+  const abrir = (requeridas: string[], opcionales: string[]) => {
+    const opciones: XRSessionInit & { domOverlay?: { root: Element } } = {
+      requiredFeatures: requeridas, // «local»: el origen (0,0,0) es donde está el usuario al empezar
+      optionalFeatures: opcionales,
+    };
+    if (overlay) opciones.domOverlay = { root: overlay };
+    return navigator.xr!.requestSession("immersive-ar", opciones);
   };
-  if (overlay) opciones.domOverlay = { root: overlay };
-  return navigator.xr!.requestSession("immersive-ar", opciones);
+  try {
+    return await abrir(["local", "hit-test"], ["dom-overlay", "anchors"]);
+  } catch (error) {
+    if ((error as DOMException).name !== "NotSupportedError") throw error;
+    return abrir(["local"], ["dom-overlay", "hit-test", "anchors"]);
+  }
+}
+
+/** Qué funciones opcionales concedió de verdad el navegador en esta sesión. */
+export interface CapacidadesAR {
+  overlay: boolean; // dom-overlay: botones HTML y gestos de dedos sobre la cámara
+  hitTest: boolean; // hit-test: preguntar «¿dónde está la superficie en esta dirección?»
+  anclas: boolean; // anchors: fijar un punto del mundo real y que el sistema lo siga corrigiendo
+}
+
+/**
+ * Pedir una función no garantiza recibirla. `enabledFeatures` lista las concedidas;
+ * si el navegador aún no la ofrece, se mira si existen las funciones de la API.
+ */
+export function capacidadesDe(sesion: XRSession): CapacidadesAR {
+  const concedidas = (sesion as XRSession & { enabledFeatures?: string[] }).enabledFeatures;
+  const tiene = (nombre: string, respaldo: boolean) => (Array.isArray(concedidas) ? concedidas.includes(nombre) : respaldo);
+  return {
+    overlay: Boolean(sesion.domOverlayState),
+    hitTest: tiene("hit-test", typeof sesion.requestHitTestSource === "function"),
+    anclas: tiene("anchors", typeof XRFrame !== "undefined" && "createAnchor" in XRFrame.prototype),
+  };
 }
 
 export function describirErrorAR(err: unknown): string {
