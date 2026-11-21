@@ -6,6 +6,7 @@ import type { ProgresoModelo } from "./db";
 import { crearVisor } from "./visor";
 import { pedirPermisoOrientacion, hayOrientacionReal, iniciarControlOrientacion } from "./sensores";
 import type { ControlOrientacion } from "./sensores";
+import { iniciarCamaraDeFondo, detenerCamaraDeFondo, describirErrorCamara } from "./camara";
 
 // Punto de entrada del proyecto. El andamiaje de Vite + TypeScript + Three.js
 // se confirmó en sesiones anteriores; el Service Worker se registró en la
@@ -188,6 +189,46 @@ btnOrientacion.addEventListener("click", async () => {
   }, 150);
 });
 btnCalibrar.addEventListener("click", () => control?.calibrar());
+
+// ── Sesión 36: cámara como fondo del visor ──────────────────────────────────
+const videoFondo = document.querySelector<HTMLVideoElement>("#fondo-camara")!;
+const btnCamara = document.querySelector<HTMLButtonElement>("#btn-camara")!;
+let streamFondo: MediaStream | null = null;
+
+function apagarCamara() {
+  detenerCamaraDeFondo(videoFondo, streamFondo);
+  streamFondo = null;
+  videoFondo.hidden = true;
+  visor.fondoTransparente(false);
+  btnCamara.textContent = "📷 Cámara de fondo";
+}
+
+btnCamara.addEventListener("click", async () => {
+  if (streamFondo) {
+    apagarCamara();
+    return;
+  }
+  avisarVisor("");
+  try {
+    // El permiso se pide AQUÍ, dentro del clic — no al cargar la página.
+    streamFondo = await iniciarCamaraDeFondo(videoFondo);
+  } catch (err) {
+    avisarVisor(describirErrorCamara(err));
+    return;
+  }
+  videoFondo.hidden = false;
+  visor.fondoTransparente(true);
+  btnCamara.textContent = "📷 Cámara: ACTIVA (toca para apagar)";
+});
+
+// Si el usuario cambia de pestaña o minimiza, la cámara se apaga sola:
+// una cámara abierta en segundo plano gasta batería y deja el LED encendido.
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && streamFondo) {
+    apagarCamara();
+    avisarVisor("La cámara se apagó al salir de la página. Vuelve a activarla cuando quieras.");
+  }
+});
 
 // Registro del Service Worker generado por Workbox — Sesión 34.
 registerSW({
