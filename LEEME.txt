@@ -1,38 +1,38 @@
-Atlas 3D de Arquitectura de Software — checkpoint al cierre de la Sesión 36
+Atlas 3D de Arquitectura de Software — checkpoint al cierre de la Sesión 37
 Electiva - PWA · UPTC (Sub-bloque B)
 
 Qué es esto
 -----------
-El Atlas 3D al terminar la Sesión 36. Es el PUNTO DE PARTIDA de la Sesión 37
-(avisos, notificaciones y descargas en segundo plano).
+El Atlas 3D con SERVICE WORKER PROPIO (src/sw.ts), avisos (notificaciones
+locales) y descarga de fichas de modelos en segundo plano (Background Sync).
 
-Lo que ya tiene el visor
--------------------------
-  - Un cubo de PRUEBA en Three.js (no hay catálogo real de modelos todavía)
-  - Control con ratón o dedo (OrbitControls) y, si hay sensores, con la
-    orientación del teléfono (Sesión 35)
-  - Cámara del dispositivo como fondo vivo detrás del cubo (Sesión 36).
-    OJO: esto NO es realidad aumentada: el cubo no está anclado a nada del
-    mundo, solo se dibuja encima del video.
+Novedades de la Sesión 37
+--------------------------
+  src/sw.ts          Service Worker escrito a mano (InjectManifest): precaché,
+                     rutas, evento sync (descargas) y notificationclick
+  src/descargas.ts   cola de descargas — la comparten el SW y la página
+  src/avisos.ts      permiso y notificaciones locales
+  src/db.ts          versión 2: almacén "descargas" (migración por tramos)
+  public/modelos/    fichas de TEXTO de prueba (no son modelos 3D)
+  vite.config.ts     strategies: "injectManifest" + globIgnores: ["modelos/**"]
+  tsconfig.sw.json   comprueba los tipos del SW con la librería "WebWorker"
 
 Cómo probarlo
 --------------
   npm install
-  npm run dev        (para programar)
-  npm run build      (compila TypeScript y genera dist/ con el Service Worker)
-  npm run preview    (sirve dist/ en localhost; la app ya funciona sin conexión)
+  npm run build        (el build compila también src/sw.ts)
+  npm run preview      → http://localhost:4173
+  1. «Activar avisos» (el permiso se pide en el clic).
+  2. «Descargar fichas…»: barra de progreso 0→3 y tarjetas «disponible sin
+     conexión». DevTools → Application → Background Sync permite disparar
+     el evento a mano.
+  3. Apaga el servidor (Ctrl+C), recarga: la app y las fichas siguen ahí.
 
-  La cámara y los sensores exigen HTTPS o localhost. En un teléfono real,
-  ver la guía de la Sesión 35 (sección "Probar en un teléfono real").
-
-Estructura
-----------
-  src/visor.ts      escena Three.js (cubo, luces, OrbitControls, fondo transparente)
-  src/sensores.ts   orientación del dispositivo (Sesión 35)
-  src/camara.ts     cámara de fondo y mensajes de error (Sesión 36)
-  src/db.ts         progreso en IndexedDB (Sesión 33)
-  src/crypto.ts     cifrado de la nota de estudio (Sesión 33)
-  src/main.ts       conecta todo
-  vite.config.ts    vite-plugin-pwa con generateSW (Workbox genera el SW)
+Limitaciones honestas
+----------------------
+  - Es notificación LOCAL: no hay push desde un servidor (el Atlas no tiene
+    servidor; el push se vio en la Sesión 26 con el Gestor).
+  - Background Sync no existe en Safari ni Firefox: hay plan B desde la página.
+  - Las fichas son texto de prueba; el catálogo 3D real viene después.
 
 UPTC · Facultad de Ingeniería · Electiva - PWA

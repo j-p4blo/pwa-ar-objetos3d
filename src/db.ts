@@ -4,7 +4,8 @@
 // Sesión 33, sección 2 y 3.
 
 const NOMBRE_DB = "atlas3d-progreso-db";
-const VERSION_DB = 1;
+// Versión 2 (Sesión 37): se agrega el almacén "descargas" (cola de modelos para usar sin conexión).
+const VERSION_DB = 2;
 
 export interface ProgresoModelo {
   modeloId: string;
@@ -21,12 +22,23 @@ export function abrirBaseDeDatos(): Promise<IDBDatabase> {
 
     peticion.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
-      const store = db.createObjectStore("progreso", { keyPath: "modeloId" });
-      store.createIndex("porFavorito", "favorito", { unique: false });
-      store.createIndex("porUltimaVisita", "ultimaVisita", { unique: false });
+      // Migración por tramos (Sesión 22/26): quien viene de la v1 conserva su
+      // progreso y solo recibe lo nuevo.
+      if (event.oldVersion < 1) {
+        const store = db.createObjectStore("progreso", { keyPath: "modeloId" });
+        store.createIndex("porFavorito", "favorito", { unique: false });
+        store.createIndex("porUltimaVisita", "ultimaVisita", { unique: false });
+      }
+      if (event.oldVersion < 2) {
+        db.createObjectStore("descargas", { keyPath: "modeloId" });
+      }
     };
 
-    peticion.onsuccess = (event) => resolve((event.target as IDBOpenDBRequest).result);
+    peticion.onsuccess = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      db.onversionchange = () => db.close(); // no bloquear futuras migraciones desde otra pestaña
+      resolve(db);
+    };
     peticion.onerror = (event) => reject((event.target as IDBOpenDBRequest).error);
   });
 }
@@ -119,5 +131,39 @@ export async function guardarNotaDeEstudio(
     const escritura = store.put(registro);
     escritura.onsuccess = () => resolve();
     escritura.onerror = () => reject(escritura.error);
+  });
+}
+
+// ── Sesión 37: cola de descargas para uso sin conexión ─────────────────────
+export interface Descarga {
+  modeloId: string;
+  estado: "pendiente" | "listo";
+}
+
+/** Anota (o reinicia a «pendiente») la descarga de varios modelos. */
+export function encolarDescargas(db: IDBDatabase, ids: string[]): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("descargas", "readwrite");
+    const store = tx.objectStore("descargas");
+    ids.forEach((modeloId) => store.put({ modeloId, estado: "pendiente" } satisfies Descarga));
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+export function obtenerDescargas(db: IDBDatabase): Promise<Descarga[]> {
+  return new Promise((resolve, reject) => {
+    const peticion = db.transaction("descargas", "readonly").objectStore("descargas").getAll();
+    peticion.onsuccess = () => resolve(peticion.result as Descarga[]);
+    peticion.onerror = () => reject(peticion.error);
+  });
+}
+
+export function marcarDescargaLista(db: IDBDatabase, modeloId: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("descargas", "readwrite");
+    tx.objectStore("descargas").put({ modeloId, estado: "listo" } satisfies Descarga);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
   });
 }

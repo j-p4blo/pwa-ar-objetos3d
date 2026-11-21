@@ -22,6 +22,16 @@
       </div>
       <p class="aviso-demo">Visor de prueba: un cubo, no un modelo real. Con la cámara de fondo NO es realidad aumentada todavía: el cubo no está anclado a nada del mundo, solo se dibuja encima del video.</p>
     </section>
+    <section class="descargas-zona" aria-labelledby="titulo-descargas">
+      <h2 id="titulo-descargas">Uso sin conexión</h2>
+      <div class="descargas-barra">
+        <button type="button" id="btn-avisos">🔔 Activar avisos</button>
+        <button type="button" id="btn-descargar">⬇ Descargar fichas para usar sin conexión</button>
+        <span id="estado-avisos" class="estado-avisos"></span>
+      </div>
+      <progress id="progreso-descarga" max="3" value="0" hidden></progress>
+      <p id="estado-descarga" class="estado-descarga" role="status"></p>
+    </section>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
