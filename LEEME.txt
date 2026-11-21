@@ -1,40 +1,42 @@
-Atlas 3D de Arquitectura de Software — checkpoint al cierre de la Sesión 34
+Atlas 3D de Arquitectura de Software — checkpoint al cierre de la Sesión 35
 Electiva - PWA · UPTC (Sub-bloque B)
 
 Qué es esto
 -----------
-El Atlas 3D con el Service Worker generado por Workbox (Sesión 34,
-espejo de la Sesión 23). El sw.js escrito a mano de las Sesiones 28-32
-desapareció: ahora lo genera vite-plugin-pwa durante "npm run build", con
-la lista de precaché calculada a partir de dist/ (nombres con hash
-incluidos). Esto resuelve de verdad la limitación de offline abierta
-desde la Sesión 29: el build SÍ funciona sin conexión.
+El Atlas 3D con su PRIMER visor de Three.js, controlado por los sensores
+de orientación del dispositivo (Sesión 35, espejo de la Sesión 25).
+Inclina el teléfono y el modelo gira; sin sensores (un computador de
+escritorio) el visor sigue siendo usable con ratón o dedo (OrbitControls).
 
-IMPORTANTE: el Service Worker solo existe en el BUILD, no en "npm run dev".
-Para probar el offline real:
+El catálogo real de modelos 3D todavía no existe: el visor muestra un
+CUBO DE PRUEBA, no un modelo real. Sirve para comprobar que la lectura de
+los sensores llega y mueve algo, sin inventar archivos .glb inexistentes.
 
+Cómo probarlo
+--------------
   npm install
-  npm run build
-  npm run preview        (abre la URL que imprime, p. ej. localhost:4173)
+  npm run dev           (para programar; el visor funciona igual)
 
-Carga la página una vez, DevTools → Network → "Offline", recarga: la app
-sigue cargando completa. Con "npm run dev" el Service Worker no se genera
-(el servidor de desarrollo sirve módulos al vuelo, no hay nada que
-precachear) — es normal.
+  Los sensores de orientación solo se ven en un dispositivo real, y desde
+  una página HTTPS. La forma más simple de probar en tu teléfono:
+     npm run build
+     npm run preview -- --host
+  y abrir desde el teléfono la URL "Network" que imprime Vite... pero
+  OJO: eso es HTTP, y Chrome para Android lo bloquea para sensores. Ver la
+  guía de la Sesión 35 (sección "Probar en un teléfono real") para las
+  opciones con HTTPS (túnel o localhost por USB).
+  En el computador, las DevTools de Chrome tienen un panel "Sensors"
+  (Ctrl+Shift+P → "Show Sensors") que simula la orientación.
 
-La capa de progreso con IndexedDB y la nota cifrada (Sesión 33) siguen
-igual. El catálogo real de modelos 3D todavía no existe: la demo usa tres
-IDs de prueba ("modelo-demo-1/2/3").
+  Con el build (npm run build + npm run preview) la app además funciona
+  sin conexión (Sesión 34). Ten en cuenta que el precaché creció de unos
+  25 KiB a unos 500 KiB: es el peso de Three.js, que ahora sí se usa.
 
-Estructura
-----------
-  index.html               documento HTML raíz
-  vite.config.ts           NUEVO (Sesión 34): VitePWA + estrategias de runtime
-  public/manifest.json     el manifest de la Sesión 27
-  public/iconos/           icon-192.png, icon-512.png, icon-512-maskable.png
-  src/main.ts              punto de entrada; registra el SW con registerSW()
-  src/db.ts, src/crypto.ts IndexedDB y cifrado (Sesión 33)
-  src/style.css            estilos
-  src/vite-env.d.ts        tipos de Vite + de vite-plugin-pwa/client
+Estructura nueva (Sesión 35)
+-----------------------------
+  src/visor.ts       escena de Three.js (cubo de prueba, luces, OrbitControls)
+  src/sensores.ts    permiso de iOS, ¿hay sensores reales?, orientación relativa
+  src/main.ts        conecta botones, visor y sensores
+  (el resto igual que en el checkpoint de la Sesión 34)
 
 UPTC · Facultad de Ingeniería · Electiva - PWA

@@ -9,6 +9,16 @@
     <link rel="manifest" href="/manifest.json" />
   </head>
   <body>
+    <section class="visor-zona">
+      <div class="visor-barra">
+        <button type="button" id="btn-orientacion">📱 Rotar con el teléfono</button>
+        <button type="button" id="btn-calibrar" disabled>Calibrar</button>
+        <span id="lectura-visor" class="lectura-visor"></span>
+      </div>
+      <p id="aviso-visor" class="aviso-visor" role="status" hidden></p>
+      <div id="visor" class="visor"></div>
+      <p class="aviso-demo">Visor de prueba: un cubo, no un modelo real. Arrastra con el ratón o el dedo para girarlo.</p>
+    </section>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
